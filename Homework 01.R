@@ -49,4 +49,97 @@ average_delay_by_carrier <- flights %>%
   arrange(desc(total_flights))
 
 kable(average_delay_by_carrier)
+
+# Understanding Data
+
+# 各年ごとのフライト数を集計
+flight_counts <- flights %>%
+  group_by(year) %>%
+  summarise(total_flights = n())
+
+# グラフの作成
+ggplot(data = flight_counts, aes(x = factor(year), y = total_flights)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "Flight Count", title = "Flight Count by Year") +
+  theme_minimal()
           
+
+# 月の英語の月名を定義
+month_names <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+# 月ごとのOrigin別フライト数を集計
+flight_counts <- flights %>%
+  mutate(month = month) %>%
+  group_by(month) %>%
+  summarise(total_flights = n()) %>%
+  mutate(month = factor(month, levels = 1:12, labels = month_names)) %>%
+  arrange(month)
+
+# 表の作成
+flight_table <- flight_counts %>%
+  spread(key = month, value = total_flights, fill = 0)
+
+# 棒グラフの作成
+ggplot(flight_counts, aes(x = month, y = total_flights)) +
+  geom_bar(stat = "identity", fill = "transparent", color = "blue") +
+  geom_text(aes(label = total_flights), vjust = -0.5, color = "blue") +
+  labs(x = "Month", y = "Flight Count", title = "Flight Count by Month") +
+  theme_minimal()
+
+
+# Originごとのフライト数を集計
+origin_counts <- flights %>%
+  group_by(month, origin) %>%
+  summarise(total_flights = n()) %>%
+  spread(key = origin, value = total_flights, fill = 0)
+
+# Destごとのフライト数を集計
+dest_counts <- flights %>%
+  group_by(month, dest) %>%
+  summarise(total_flights = n()) %>%
+  spread(key = dest, value = total_flights, fill = 0)
+
+# Originごとの表を表示
+print(origin_counts)
+
+# Destごとの表を表示
+print(dest_counts)
+
+# Problem 01
+
+# Q1: 到着遅延が2時間以上のフライト
+q1_flights <- flights %>%
+  filter(arr_delay > 120)
+
+# Q2: ヒューストン行きで、United、American、Deltaによって運航されたフライト
+q2_flights <- flights %>%
+  filter(dest %in% c("IAH", "HOU"),
+         carrier %in% c("UA", "AA", "DL"))
+
+# Q3: 7月、8月、9月に出発したフライト
+q3_flights <- flights %>%
+  filter(month %in% c(7, 8, 9))
+
+# Q4: 到着が2時間以上遅延したが、出発は遅延しなかったフライト
+q4_flights <- flights %>%
+  filter(arr_delay > 120,
+         dep_delay <= 0)
+
+# Q5: 出発が1時間以上遅延し、フライト中に30分以上遅延を取り戻したフライト
+q5_flights <- flights %>%
+  filter(dep_delay >= 60,
+         (arr_delay - dep_delay) > 30)
+
+# 各問に対するフライトの数を表示
+answer <- data.frame(
+  Q1 = nrow(q1_flights),
+  Q2 = nrow(q2_flights),
+  Q3 = nrow(q3_flights),
+  Q4 = nrow(q4_flights),
+  Q5 = nrow(q5_flights)
+)
+
+answer
+
