@@ -1,11 +1,14 @@
 ---
-title: "Individual Assignment"
+title: "Individual Assignment_01"
 author: "Naoya Kinoshita"
 date: "2023-05-16"
 output: html_document
 ---
 
-# Individual Assignment_01 / Naoya Kinoshita
+#### I conducted a data analysis using the "nycflights13" dataset, which contains airline on-time data for all flights departing NYC in 2013. Below are the answers to the specified pre-questions (Q1-Q6), as well as the code used for Problem 01 and Problem 02:
+
+
+```{r}
 
 library(nycflights13)
 library(tidyverse)
@@ -13,17 +16,99 @@ library(dplyr)
 library(knitr)
 library(kableExtra)
 
+```
+
+### Problem 01
+####    Use logical operators to find flights that
+####    Q1: Had an arrival delay of two or more hours (> 120 minutes) 
+####    Q1: Answer:  10,034 Flights
+
+####    Q2: Flew to Houston (IAH or HOU) Were operated by United (UA), American (AA), or Delta (DL) 
+####    Q2: Answer:  7,198 Flights
+
+####    Q3: Departed in summer (July, August, and September) 
+####    Q3: Answer:  86,326 Flights
+
+####    Q4: Arrived more than two hours late, but didn’t leave late 
+####    Q4: Answer:  29 Flights
+
+####    Q5: Were delayed by at least an hour, but made up over 30 minutes in flight
+####    Q5: Answer:  1,948 Flights
+
+
+```{r}
+
+# Q1: The flights delayed more than 120 minutes
+q1_flights <- flights %>%
+  filter(arr_delay > 120)
+
+# Q2: The flights whihch destination are Huston and operated by UA, AA, or DL
+q2_flights <- flights %>%
+  filter(dest %in% c("IAH", "HOU"),
+         carrier %in% c("UA", "AA", "DL"))
+
+# Q3: The flights depearted in July, August, September
+q3_flights <- flights %>%
+  filter(month %in% c(7, 8, 9))
+
+# Q4: Arrived more than two hours late, but didn’t leave late Were delayed by at least an hour, but made up over 30 minutes in flight
+q4_flights <- flights %>%
+  filter(arr_delay > 120,
+         dep_delay <= 0)
+
+# Q5: Were delayed by at least an hour, but made up over 30 minutes in fl ight
+q5_flights <- flights %>%
+  filter(dep_delay >= 60,
+         (arr_delay - dep_delay) > 30)
+
+# showing answer to each question
+answer <- data.frame(
+  Q1 = nrow(q1_flights),
+  Q2 = nrow(q2_flights),
+  Q3 = nrow(q3_flights),
+  Q4 = nrow(q4_flights),
+  Q5 = nrow(q5_flights)
+)
+
+answer
+
+```
+
+### Problem 02
+#### Question : What months had the highest and lowest proportion of cancelled flights? Interpret any seasonal patterns. To determine if a flight was cancelled use the following code
+
+#### Answer : When organizing the data and examining the bar graph, it was found that the month with the highest percentage of canceled flights was February, at 5.371%. Conversely, the month with the lowest percentage of canceled flights was October, at 0.938%.
+
+```{r}
+
+# calculating the proportion of flights that cancelled
+cancelled_proportion <- flights %>%
+  group_by(month) %>%
+  summarise(cancelled_proportion = sum(is.na(dep_delay) | is.na(arr_delay)) / n())
+
+# Making bar graph
+ggplot(cancelled_proportion, aes(x = month, y = cancelled_proportion)) +
+  geom_bar(stat = "identity", fill = "transparent", color = "blue") +
+  geom_text(aes(label = scales::percent(cancelled_proportion)), vjust = -0.5, color = "blue") +
+  scale_x_continuous(breaks = 1:12, labels = month.abb) +
+  labs(x = "Month", y = "Cancelled Flights Proportion") +
+  theme_minimal()
+```
+
+### Understanding data
+
+```{r}
 
 dplyr::glimpse(flights)
 
 flights %>%
-  count() is the same as group_by()... summarise()
-  sort=TRUE` gives table in descending order
+  #count() is the same as group_by()... summarise()
+  #sort=TRUE` gives table in descending order
   count(origin, sort = TRUE) %>%
 
-mutate() generates a new column called `prop` which is the proportion of flights
-calculated as number of flights `n` divided by the `sum(n)`
-mutate(prop = n/sum(n))
+  # mutate() generates a new column called `prop` which is the proportion of flights
+  # calculated as number of flights `n` divided by the `sum(n)`
+  mutate(prop = n/sum(n))
 
 # Which origin airports had the greatest number of flights?
 origin <- flights %>%
@@ -33,7 +118,6 @@ origin <- flights %>%
   kable(origin)
 
 # What was the longest arr_delay?
-# 表が汚いから修正したい
 longest_arr_delay <- flights %>%
   filter(arr_delay == max(arr_delay, na.rm = TRUE)) %>%
   select(year, month, day, dep_time, sched_dep_time, dep_delay, arr_time, sched_arr_time, arr_delay, carrier, flight, tailnum, origin, dest, air_time, distance, hour, minute, time_hour)
@@ -61,24 +145,11 @@ kable(average_delay_by_carrier)
 
 # Understanding Data
 
-# 各年ごとのフライト数を集計
-flight_counts <- flights %>%
-  group_by(year) %>%
-  summarise(total_flights = n())
-
-# グラフの作成
-ggplot(data = flight_counts, aes(x = factor(year), y = total_flights)) +
-  geom_line() +
-  geom_point() +
-  labs(x = "Year", y = "Flight Count", title = "Flight Count by Year") +
-  theme_minimal()
-          
-
-# 月の英語の月名を定義
+# Definition of Month
 month_names <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun",
                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
-# 月ごとのOrigin別フライト数を集計
+# Collecting data by month
 flight_counts <- flights %>%
   mutate(month = month) %>%
   group_by(month) %>%
@@ -86,83 +157,33 @@ flight_counts <- flights %>%
   mutate(month = factor(month, levels = 1:12, labels = month_names)) %>%
   arrange(month)
 
-# 表の作成
+# making a table
 flight_table <- flight_counts %>%
   spread(key = month, value = total_flights, fill = 0)
 
-# 棒グラフの作成
+# making a bar graph
 ggplot(flight_counts, aes(x = month, y = total_flights)) +
   geom_bar(stat = "identity", fill = "transparent", color = "blue") +
   geom_text(aes(label = total_flights), vjust = -0.5, color = "blue") +
   labs(x = "Month", y = "Flight Count", title = "Flight Count by Month") +
   theme_minimal()
 
-
-# Originごとのフライト数を集計
+# collecting data by origin
 origin_counts <- flights %>%
   group_by(month, origin) %>%
   summarise(total_flights = n()) %>%
   spread(key = origin, value = total_flights, fill = 0)
 
-# Destごとのフライト数を集計
+# collecting data by destination
 dest_counts <- flights %>%
   group_by(month, dest) %>%
   summarise(total_flights = n()) %>%
   spread(key = dest, value = total_flights, fill = 0)
 
-# Originごとの表を表示
+# prints by Origin
 print(origin_counts)
 
-# Destごとの表を表示
+# prints by Dest
 print(dest_counts)
 
-# Problem 01
-
-# Q1: 到着遅延が2時間以上のフライト
-q1_flights <- flights %>%
-  filter(arr_delay > 120)
-
-# Q2: ヒューストン行きで、United、American、Deltaによって運航されたフライト
-q2_flights <- flights %>%
-  filter(dest %in% c("IAH", "HOU"),
-         carrier %in% c("UA", "AA", "DL"))
-
-# Q3: 7月、8月、9月に出発したフライト
-q3_flights <- flights %>%
-  filter(month %in% c(7, 8, 9))
-
-# Q4: 到着が2時間以上遅延したが、出発は遅延しなかったフライト
-q4_flights <- flights %>%
-  filter(arr_delay > 120,
-         dep_delay <= 0)
-
-# Q5: 出発が1時間以上遅延し、フライト中に30分以上遅延を取り戻したフライト
-q5_flights <- flights %>%
-  filter(dep_delay >= 60,
-         (arr_delay - dep_delay) > 30)
-
-# 各問に対するフライトの数を表示
-answer <- data.frame(
-  Q1 = nrow(q1_flights),
-  Q2 = nrow(q2_flights),
-  Q3 = nrow(q3_flights),
-  Q4 = nrow(q4_flights),
-  Q5 = nrow(q5_flights)
-)
-
-answer
-
-# Problem 2
-
-# キャンセルされたフライトの割合を計算
-cancelled_proportion <- flights %>%
-  group_by(month) %>%
-  summarise(cancelled_proportion = sum(is.na(dep_delay) | is.na(arr_delay)) / n())
-
-# 棒グラフを作成
-ggplot(cancelled_proportion, aes(x = month, y = cancelled_proportion)) +
-  geom_bar(stat = "identity", fill = "transparent", color = "blue") +
-  geom_text(aes(label = scales::percent(cancelled_proportion)), vjust = -0.5, color = "blue") +
-  scale_x_continuous(breaks = 1:12, labels = month.abb) +
-  labs(x = "Month", y = "Cancelled Flights Proportion") +
-  theme_minimal()
+```
